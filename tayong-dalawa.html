@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Puso — isang awit na iskrol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,500;1,600&family=Sora:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0b0c1a;
+    --mist:#ffffff;
+    --mist-dim:rgba(255,255,255,0.82);
+    --mist-faint:rgba(255,255,255,0.6);
+    --gold:#e8b86d;
+    --rose:#e08fa3;
+    --font-display:'Fraunces', Georgia, serif;
+    --font-body:'Sora', -apple-system, sans-serif;
+    --font-mono:'Space Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0; padding:0;
+    background:var(--void);
+    color:var(--mist);
+    font-family:var(--font-body);
+    overflow-x:hidden;
+    scroll-behavior:auto;
+  }
+
+  canvas#bg{
+    position:fixed; inset:0;
+    width:100%; height:100%;
+    display:block;
+    z-index:0;
+  }
+
+  main{
+    position:relative;
+    z-index:2;
+  }
+
+  .hero, .outro, .line{
+    min-height:100vh;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:10vh 7vw;
+    position:relative;
+  }
+
+  .veil{
+    position:relative;
+    max-width:44rem;
+    padding:3rem 2.4rem;
+  }
+
+  .kicker{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    letter-spacing:0.32em;
+    text-transform:uppercase;
+    color:var(--gold);
+    opacity:0.85;
+    margin-bottom:1.6rem;
+  }
+
+  .hero-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-style:italic;
+    font-size:clamp(3.2rem, 12vw, 7.5rem);
+    line-height:1;
+    margin:0 0 1.6rem 0;
+  }
+
+  .hero-sub{
+    font-size:clamp(0.9rem, 1.6vw, 1.05rem);
+    color:var(--mist-dim);
+    max-width:30ch;
+    margin:0 auto;
+    line-height:1.6;
+  }
+
+  .scroll-cue{
+    position:absolute;
+    bottom:6vh; left:50%;
+    transform:translateX(-50%);
+    display:flex; flex-direction:column;
+    align-items:center;
+    gap:0.6rem;
+    font-family:var(--font-mono);
+    font-size:0.68rem;
+    letter-spacing:0.25em;
+    text-transform:uppercase;
+    color:var(--mist-faint);
+    transition:opacity 0.4s ease;
+  }
+
+  .scroll-cue .chevron{
+    font-size:1rem;
+    animation:bob 1.8s ease-in-out infinite;
+  }
+
+  @keyframes bob{
+    0%,100%{ transform:translateY(0); opacity:0.4; }
+    50%{ transform:translateY(8px); opacity:1; }
+  }
+
+  .num{
+    font-family:var(--font-mono);
+    font-size:0.75rem;
+    letter-spacing:0.3em;
+    color:var(--gold);
+    opacity:0.85;
+    margin-bottom:1.5rem;
+    text-transform:uppercase;
+  }
+
+  .lyric-text{
+    font-family:var(--font-display);
+    font-style:italic;
+    font-weight:500;
+    font-size:clamp(2.1rem, 6.4vw, 4.4rem);
+    line-height:1.16;
+    max-width:17ch;
+    margin:0 auto;
+  }
+
+  .gloss-text{
+    margin:1.4rem auto 0 auto;
+    font-family:var(--font-body);
+    font-weight:300;
+    font-size:clamp(0.82rem, 1.3vw, 0.98rem);
+    color:var(--mist-dim);
+    letter-spacing:0.02em;
+    max-width:32ch;
+    opacity:0;
+    transform:translateY(10px);
+    transition:opacity 0.8s ease, transform 0.8s ease;
+    transition-delay:0.35s;
+  }
+
+  .in-view .gloss-text{ opacity:1; transform:translateY(0); }
+
+  /* word mask reveal */
+  .word{ overflow:hidden; display:inline-block; vertical-align:top; }
+  .word-inner{
+    display:inline-block;
+    transform:translateY(120%);
+    opacity:0;
+    transition:transform 0.9s cubic-bezier(.16,.84,.24,1), opacity 0.6s ease;
+    transition-delay:calc(var(--i) * 55ms);
+  }
+  .in-view .word-inner{
+    transform:translateY(0);
+    opacity:1;
+  }
+
+  .line.beating .lyric-text{
+    animation:pulseBeat 0.86s ease-in-out infinite;
+    transform-origin:center;
+  }
+
+  @keyframes pulseBeat{
+    0%,100%{ transform:scale(1); }
+    22%{ transform:scale(1.035); }
+    38%{ transform:scale(1); }
+    54%{ transform:scale(1.05); }
+    72%{ transform:scale(1); }
+  }
+
+  .outro-mark{
+    font-family:var(--font-display);
+    font-style:italic;
+    font-size:clamp(1.2rem, 2.6vw, 1.6rem);
+    color:var(--mist-dim);
+    letter-spacing:0.04em;
+  }
+
+  .outro-hint{
+    margin-top:1.2rem;
+    font-family:var(--font-mono);
+    font-size:0.68rem;
+    letter-spacing:0.25em;
+    text-transform:uppercase;
+    color:var(--mist-faint);
+  }
+
+  /* progress ui */
+  .progress-rail{
+    position:fixed;
+    right:2.4rem; top:50%;
+    transform:translateY(-50%);
+    width:1px; height:130px;
+    background:var(--mist-faint);
+    z-index:5;
+    opacity:0;
+    transition:opacity 0.5s ease;
+  }
+  .progress-dot{
+    position:absolute;
+    left:50%; top:0;
+    width:7px; height:7px;
+    margin-left:-3px; margin-top:-3px;
+    border-radius:50%;
+    background:var(--gold);
+    box-shadow:0 0 10px 1px var(--gold);
+  }
+  .counter{
+    position:fixed;
+    left:2.4rem; top:2.4rem;
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    letter-spacing:0.18em;
+    color:var(--mist-dim);
+    z-index:5;
+    opacity:0;
+    transition:opacity 0.5s ease;
+  }
+
+  @media (max-width:640px){
+    .progress-rail, .counter{ display:none; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .word-inner{
+      transition:opacity 0.5s ease;
+      transform:none !important;
+    }
+    .chevron{ animation:none; }
+    .line.beating .lyric-text{ animation:none; }
+  }
+
+body, body *{
+  text-shadow:
+    -2px -2px 0 rgba(0,0,0,.95),
+     2px -2px 0 rgba(0,0,0,.95),
+    -2px  2px 0 rgba(0,0,0,.95),
+     2px  2px 0 rgba(0,0,0,.95),
+     0 0 8px rgba(0,0,0,.95),
+     0 0 16px rgba(0,0,0,.85) !important;
+}
+
+
+.hero-title,.hero-sub,.lyric-text,.gloss-text,.num,.kicker,.outro-mark,.outro-hint,.counter,.scroll-cue,span,p,h1,div{
+  -webkit-text-stroke: 3px rgba(0,0,0,0.95) !important;
+  paint-order: stroke fill;
+  text-shadow: 0 0 12px #000,0 0 24px #000,0 0 36px #000 !important;
+}
+
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="counter" id="counter">01 / 09</div>
+<div class="progress-rail" id="progressRail"><div class="progress-dot" id="progressDot"></div></div>
+
+<main>
+
+  <section class="hero" id="hero">
+    <div class="veil">
+      <div class="kicker"></div>
+      <h1 class="hero-title reveal-text"></h1>
+      <p class="hero-sub"></p>
+    </div>
+    <div class="scroll-cue" id="scrollCue">
+      <span></span>
+      <span class="chevron">↓</span>
+    </div>
+  </section>
+
+  <section class="line" data-line="1">
+    <div class="veil">
+      <div class="num"></div>
+      <p class="lyric-text reveal-text">Upang yakapin ang mundo.</p>
+      <p class="gloss-text">to embrace the world</p>
+    </div>
+  </section>
+
+  <section class="line" data-line="2">
+    <div class="veil">
+      <div class="num"></div>
+      <p class="lyric-text reveal-text">Kaya't sana ay tayo na lang.</p>
+      <p class="gloss-text">so I wish it could just be us</p>
+    </div>
+  </section>
+
+  <section class="line" data-line="3">
+    <div class="veil">
+      <div class="num"></div>
+      <p class="lyric-text reveal-text">Baka puwedeng ako na lang?</p>
+      <p class="gloss-text">maybe I could be the one instead</p>
+    </div>
+  </section>
+
+  <section class="line" data-line="4">
+    <div class="veil">
+      <div class="num"></div>
+      <p class="lyric-text reveal-text">Ako sana ay mapagbigyan.</p>
+      <p class="gloss-text">I hope you’ll give me a chance</p>
+    </div>
+  </section>
+
+  <section class="line" data-line="5">
+    <div class="veil">
+      <div class="num"></div>
+      <p class="lyric-text reveal-text">Baka puwedeng tayo na lang?</p>
+      <p class="gloss-text">maybe it could just be us</p>
+    </div>
+  </section>
+
+  <section class="line" data-line="6">
+    <div class="veil">
+      <div class="num"></div>
+      <p class="lyric-text reveal-text">Isisigaw, Ihihiyaw.</p>
+      <p class="gloss-text">I'll shout it, I'll cry it out</p>
+    </div>
+  </section>
+
+  <section class="line" data-line="7">
+    <div class="veil">
+      <div class="num"></div>
+      <p class="lyric-text reveal-text">Tibok ng puso ay ikaw.</p>
+      <p class="gloss-text">you are the beat of my heart</p>
+    </div>
+  </section>
+
+  <section class="line" data-line="8">
+    <div class="veil">
+      <div class="num"></div>
+      <p class="lyric-text reveal-text">Oh, puwede ba? O puwede ka?</p>
+      <p class="gloss-text">oh, is it possible? or is it you?</p>
+    </div>
+  </section>
+
+  <section class="line" data-line="9">
+    <div class="veil">
+      <div class="num"></div>
+      <p class="lyric-text reveal-text">Halika, tayong dalawa.</p>
+      <p class="gloss-text">come, just the two of us</p>
+    </div>
+  </section>
+
+  <section class="outro" id="outro">
+    <div class="veil">
+      <p class="outro-mark reveal-text">— tayong dalawa / aje —</p>
+      <p class="outro-hint"></p>
+    </div>
+  </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+(function(){
+
+  /* ---------- word-reveal setup ---------- */
+  document.querySelectorAll('.reveal-text').forEach(function(el){
+    var words = el.textContent.trim().split(/\s+/);
+    el.innerHTML = words.map(function(w,i){
+      return '<span class="word"><span class="word-inner" style="--i:'+i+'">'+w+'</span></span>';
+    }).join(' ');
+  });
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      e.target.classList.toggle('in-view', e.isIntersecting);
+    });
+  }, { threshold: 0.42 });
+  document.querySelectorAll('.hero, .line, .outro').forEach(function(s){ io.observe(s); });
+
+  var scrollCue = document.getElementById('scrollCue');
+  window.addEventListener('scroll', function(){
+    scrollCue.style.opacity = window.scrollY > 220 ? 0 : 1;
+  }, { passive:true });
+
+  /* ---------- three.js scene ---------- */
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var motionOn = reducedMotion ? 0 : 1;
+
+  var canvas = document.getElementById('bg');
+  var renderer = new THREE.WebGLRenderer({ canvas:canvas, antialias:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  var BOUNDARIES = [
+    { shape:'chaos',  color:'#0b0c1a', camZ:8.0,
+      orbA:{ pos:[-3.0, 0.0,-1.0], scale:0,   op:0    }, orbB:{ pos:[ 3.0, 0.0,-1.0], scale:0,   op:0    } },
+    { shape:'sphere', color:'#141833', camZ:7.2,
+      orbA:{ pos:[-2.6, 0.3, 1.2], scale:0,   op:0    }, orbB:{ pos:[ 2.6,-0.2, 1.2], scale:0,   op:0    } },
+    { shape:'sphere', color:'#1c1f3f', camZ:6.8,
+      orbA:{ pos:[-2.4, 0.35,1.4], scale:1,   op:0.95 }, orbB:{ pos:[ 2.4,-0.25,1.4], scale:1,   op:0.95 } },
+    { shape:'sphere', color:'#241f47', camZ:6.4,
+      orbA:{ pos:[-1.5, 0.55,1.6], scale:1.5, op:1    }, orbB:{ pos:[ 2.8,-0.5, 1.1], scale:0.55,op:0.35 } },
+    { shape:'sphere', color:'#2c2350', camZ:6.0,
+      orbA:{ pos:[-0.7, 0.15,1.8], scale:1.2, op:1    }, orbB:{ pos:[ 2.1,-0.2, 1.3], scale:0.8, op:0.6  } },
+    { shape:'sphere', color:'#352655', camZ:5.6,
+      orbA:{ pos:[-0.9,-0.1, 1.6], scale:1,   op:1    }, orbB:{ pos:[ 0.9, 0.1, 1.6], scale:1,   op:1    } },
+    { shape:'chaos',  color:'#3a1f3f', camZ:7.8,
+      orbA:{ pos:[-2.8, 1.2, 2.2], scale:1.3, op:1    }, orbB:{ pos:[ 2.8,-1.1, 2.2], scale:1.3, op:1    } },
+    { shape:'heart',  color:'#5c2440', camZ:5.0,
+      orbA:{ pos:[-1.0, 0.0, 1.6], scale:1,   op:1    }, orbB:{ pos:[ 1.0, 0.0, 1.6], scale:1,   op:1    } },
+    { shape:'heart',  color:'#7a2c46', camZ:4.4,
+      orbA:{ pos:[-0.55,0.0, 1.6], scale:1,   op:1    }, orbB:{ pos:[ 0.55,0.0, 1.6], scale:1,   op:1    } },
+    { shape:'heart',  color:'#b23f5a', camZ:3.3,
+      orbA:{ pos:[ 0.0, 0.0, 1.6], scale:1.5, op:1    }, orbB:{ pos:[ 0.0, 0.0, 1.6], scale:1.5, op:1    } }
+  ];
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(BOUNDARIES[0].color);
+  scene.fog = new THREE.Fog(BOUNDARIES[0].color, 4, 15);
+
+  var camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.set(0, 0, BOUNDARIES[0].camZ);
+
+  /* glow texture shared by particles + orbs */
+  function makeGlowTexture(){
+    var size = 128;
+    var c = document.createElement('canvas');
+    c.width = c.height = size;
+    var ctx = c.getContext('2d');
+    var g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.35, 'rgba(255,255,255,0.7)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,size,size);
+    return new THREE.CanvasTexture(c);
+  }
+  var glowTex = makeGlowTexture();
+
+  /* particle shapes */
+  var PARTICLE_COUNT = 1700;
+
+  function makeSphere(n, radius){
+    var arr = new Float32Array(n*3);
+    var offset = 2/n, increment = Math.PI*(3-Math.sqrt(5));
+    for(var i=0;i<n;i++){
+      var y = ((i*offset)-1)+(offset/2);
+      var r = Math.sqrt(Math.max(0,1-y*y));
+      var phi = ((i+1)%n)*increment;
+      var x = Math.cos(phi)*r, z = Math.sin(phi)*r;
+      arr[i*3]=x*radius; arr[i*3+1]=y*radius; arr[i*3+2]=z*radius;
+    }
+    return arr;
+  }
+
+  function makeHeart(n){
+    var arr = new Float32Array(n*3);
+    for(var i=0;i<n;i++){
+      var t = Math.random()*Math.PI*2;
+      var hx = 16*Math.pow(Math.sin(t),3);
+      var hy = 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
+      var rr = Math.sqrt(Math.random());
+      var x = (hx/16)*2.6*rr;
+      var y = (hy/16)*2.6*rr + 0.25;
+      var z = (Math.random()-0.5)*1.3;
+      arr[i*3]=x; arr[i*3+1]=y; arr[i*3+2]=z;
+    }
+    return arr;
+  }
+
+  function makeChaos(n, radius){
+    var arr = new Float32Array(n*3);
+    for(var i=0;i<n;i++){
+      var theta = Math.random()*Math.PI*2;
+      var phi = Math.acos(2*Math.random()-1);
+      var r = radius*(0.35+0.65*Math.random());
+      arr[i*3]   = r*Math.sin(phi)*Math.cos(theta);
+      arr[i*3+1] = r*Math.sin(phi)*Math.sin(theta);
+      arr[i*3+2] = r*Math.cos(phi);
+    }
+    return arr;
+  }
+
+  var SHAPES = {
+    sphere: makeSphere(PARTICLE_COUNT, 2.3),
+    heart: makeHeart(PARTICLE_COUNT),
+    chaos: makeChaos(PARTICLE_COUNT, 5.2)
+  };
+
+  var geometry = new THREE.BufferGeometry();
+  var posArray = new Float32Array(PARTICLE_COUNT*3);
+  posArray.set(SHAPES.chaos);
+  var posAttribute = new THREE.BufferAttribute(posArray, 3);
+  posAttribute.setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('position', posAttribute);
+
+  var particleColor = new THREE.Color(0x9aa0d8);
+  var pointsMaterial = new THREE.PointsMaterial({
+    size:0.16, map:glowTex, transparent:true, depthWrite:false,
+    blending:THREE.AdditiveBlending, sizeAttenuation:true, color:particleColor
+  });
+  var points = new THREE.Points(geometry, pointsMaterial);
+  var particleGroup = new THREE.Group();
+  particleGroup.add(points);
+  scene.add(particleGroup);
+
+  /* starfield */
+  function makeStars(n){
+    var arr = new Float32Array(n*3);
+    for(var i=0;i<n;i++){
+      var r = 18+Math.random()*24;
+      var theta = Math.random()*Math.PI*2;
+      var phi = Math.acos(2*Math.random()-1);
+      arr[i*3]=r*Math.sin(phi)*Math.cos(theta);
+      arr[i*3+1]=r*Math.sin(phi)*Math.sin(theta);
+      arr[i*3+2]=r*Math.cos(phi);
+    }
+    return arr;
+  }
+  var starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(makeStars(650),3));
+  var starMat = new THREE.PointsMaterial({
+    size:0.07, map:glowTex, transparent:true, opacity:0.5,
+    color:0xcfd3f2, depthWrite:false
+  });
+  var starfield = new THREE.Points(starGeo, starMat);
+  scene.add(starfield);
+
+  /* orbs (ako / ikaw) */
+  var BASE_ORB_SIZE = 0.9;
+  var goldColor = new THREE.Color(0xe8b86d);
+  var roseColor = new THREE.Color(0xe08fa3);
+  var warmWhite = new THREE.Color(0xfff1e0);
+
+  function makeOrb(color){
+    var mat = new THREE.SpriteMaterial({
+      map:glowTex, color:color, transparent:true,
+      blending:THREE.AdditiveBlending, depthWrite:false, opacity:0
+    });
+    var spr = new THREE.Sprite(mat);
+    spr.scale.set(0.001,0.001,1);
+    scene.add(spr);
+    return spr;
+  }
+  var orbA = makeOrb(goldColor.getHex());
+  var orbB = makeOrb(roseColor.getHex());
+
+  var colorObjs = BOUNDARIES.map(function(b){ return new THREE.Color(b.color); });
+
+  /* ---------- scroll geometry ---------- */
+  var lineEls = Array.prototype.slice.call(document.querySelectorAll('.line'));
+  var lineMeta = [];
+  function measure(){
+    lineMeta = lineEls.map(function(el){
+      return { top: el.offsetTop, height: el.offsetHeight || 1 };
+    });
+  }
+  measure();
+  window.addEventListener('resize', function(){
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    measure();
+  });
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(measure);
+  }
+  setTimeout(measure, 400);
+
+  function computeGlobalT(){
+    var vh = window.innerHeight;
+    var center = window.scrollY + vh*0.5;
+    var t = 0;
+    for(var i=0;i<lineMeta.length;i++){
+      var m = lineMeta[i];
+      var frac = (center - m.top)/m.height;
+      if(frac<0) frac=0; if(frac>1) frac=1;
+      t += frac;
+    }
+    return t;
+  }
+
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function lerpV(a,b,t){ return [lerp(a[0],b[0],t), lerp(a[1],b[1],t), lerp(a[2],b[2],t)]; }
+  function smooth(t){ return t*t*(3-2*t); }
+
+  /* ---------- DOM refs ---------- */
+  var counterEl = document.getElementById('counter');
+  var progressRail = document.getElementById('progressRail');
+  var progressDot = document.getElementById('progressDot');
+  var heartbeatSection = document.querySelector('.line[data-line="7"]');
+  var wasBeating = false;
+
+  function updateDOM(sectionIndex, globalT){
+    var visible = globalT > 0.02 && globalT < 8.98;
+    progressRail.style.opacity = visible ? 1 : 0;
+    counterEl.style.opacity = visible ? 1 : 0;
+    var pct = Math.min(1, Math.max(0, globalT/9));
+    progressDot.style.top = (pct*100)+'%';
+    var label = String(sectionIndex+1).padStart(2,'0') + ' / 09';
+    if(counterEl.textContent !== label) counterEl.textContent = label;
+    var beating = sectionIndex === 6;
+    if(beating !== wasBeating){
+      heartbeatSection.classList.toggle('beating', beating);
+      wasBeating = beating;
+    }
+  }
+
+  var tmpHSL = { h:0, s:0, l:0 };
+
+  /* ---------- render loop ---------- */
+  var clock = new THREE.Clock();
+
+  function animate(){
+    requestAnimationFrame(animate);
+    var dt = clock.getDelta();
+    var time = clock.elapsedTime;
+
+    var globalT = computeGlobalT();
+    var clamped = Math.min(globalT, 8.999);
+    var sectionIndex = Math.max(0, Math.floor(clamped));
+    var localT = clamped - sectionIndex;
+    var eased = smooth(localT);
+    var b0 = BOUNDARIES[sectionIndex], b1 = BOUNDARIES[sectionIndex+1];
+
+    /* color */
+    scene.background.lerpColors(colorObjs[sectionIndex], colorObjs[sectionIndex+1], eased);
+    scene.fog.color.copy(scene.background);
+    scene.background.getHSL(tmpHSL);
+    particleColor.setHSL(tmpHSL.h, Math.min(1, tmpHSL.s+0.15), Math.min(0.85, tmpHSL.l+0.38));
+    pointsMaterial.color.copy(particleColor);
+
+    /* camera */
+    var camZ = lerp(b0.camZ, b1.camZ, eased);
+    camera.position.z = camZ + Math.sin(time*0.15)*0.15*motionOn;
+    camera.position.x = Math.sin(time*0.1)*0.3*motionOn;
+    camera.position.y = Math.cos(time*0.13)*0.12*motionOn;
+    camera.lookAt(0,0,0);
+
+    /* particle morph */
+    var shapeFrom = SHAPES[b0.shape], shapeTo = SHAPES[b1.shape];
+    var arr = geometry.attributes.position.array;
+    for(var i=0;i<PARTICLE_COUNT;i++){
+      var idx = i*3;
+      var x = lerp(shapeFrom[idx], shapeTo[idx], eased);
+      var y = lerp(shapeFrom[idx+1], shapeTo[idx+1], eased);
+      var z = lerp(shapeFrom[idx+2], shapeTo[idx+2], eased);
+      if(motionOn){
+        var s = Math.sin(time*0.6 + i*0.37)*0.02;
+        x += s; y += s*0.7; z += s*0.5;
+      }
+      arr[idx]=x; arr[idx+1]=y; arr[idx+2]=z;
+    }
+    geometry.attributes.position.needsUpdate = true;
+
+    particleGroup.rotation.y += dt*0.12*motionOn;
+
+    var heartbeatPulse = 1;
+    if(sectionIndex>=6 && motionOn){
+      var p = Math.max(0, Math.sin(time*3.2));
+      heartbeatPulse = 1 + Math.pow(p,5)*0.09;
+    }
+    var groupScale = 1;
+    if(sectionIndex===8){ groupScale = lerp(1, 0.55, eased); }
+    particleGroup.scale.setScalar(groupScale*heartbeatPulse);
+
+    /* orbs */
+    var posA = lerpV(b0.orbA.pos, b1.orbA.pos, eased);
+    var posB = lerpV(b0.orbB.pos, b1.orbB.pos, eased);
+    if(sectionIndex===7){
+      var ang = eased*Math.PI*2.4;
+      var rad = 0.4*(1-eased*0.5);
+      posA[0]+=Math.cos(ang)*rad; posA[1]+=Math.sin(ang)*rad*0.6;
+      posB[0]+=Math.cos(ang+Math.PI)*rad; posB[1]+=Math.sin(ang+Math.PI)*rad*0.6;
+    }
+    var pulseMul = (sectionIndex>=6) ? heartbeatPulse : 1;
+    var scaleA = lerp(b0.orbA.scale, b1.orbA.scale, eased)*pulseMul;
+    var scaleB = lerp(b0.orbB.scale, b1.orbB.scale, eased)*pulseMul;
+    var opA = lerp(b0.orbA.op, b1.orbA.op, eased);
+    var opB = lerp(b0.orbB.op, b1.orbB.op, eased);
+
+    orbA.position.set(posA[0], posA[1], posA[2]);
+    orbB.position.set(posB[0], posB[1], posB[2]);
+    orbA.scale.setScalar(BASE_ORB_SIZE*scaleA);
+    orbB.scale.setScalar(BASE_ORB_SIZE*scaleB);
+    orbA.material.opacity = opA;
+    orbB.material.opacity = opB;
+
+    if(sectionIndex===8){
+      orbA.material.color.copy(goldColor).lerp(warmWhite, eased*0.7);
+      orbB.material.color.copy(roseColor).lerp(warmWhite, eased*0.7);
+    } else {
+      orbA.material.color.copy(goldColor);
+      orbB.material.color.copy(roseColor);
+    }
+
+    starfield.rotation.y += dt*0.01*motionOn;
+    starfield.rotation.x += dt*0.004*motionOn;
+
+    updateDOM(sectionIndex, globalT);
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+})();
+</script>
+</body>
+</html>
